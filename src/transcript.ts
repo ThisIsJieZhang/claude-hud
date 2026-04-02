@@ -3,7 +3,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import * as readline from 'readline';
 import { createHash } from 'node:crypto';
-import { getHudPluginDir } from './claude-config-dir.js';
+import { getCliHudPluginDir } from './claude-config-dir.js';
 import type { TranscriptData, ToolEntry, AgentEntry, TodoItem } from './types.js';
 
 interface TranscriptLine {
@@ -58,7 +58,7 @@ let createReadStreamImpl: typeof fs.createReadStream = fs.createReadStream;
 
 function getTranscriptCachePath(transcriptPath: string, homeDir: string): string {
   const hash = createHash('sha256').update(path.resolve(transcriptPath)).digest('hex');
-  return path.join(getHudPluginDir(homeDir), 'transcript-cache', `${hash}.json`);
+  return path.join(getCliHudPluginDir(homeDir), 'transcript-cache', `${hash}.json`);
 }
 
 function readTranscriptFileState(transcriptPath: string): TranscriptFileState | null {

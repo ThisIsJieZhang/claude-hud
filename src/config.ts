@@ -1,7 +1,8 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
-import { getHudPluginDir } from './claude-config-dir.js';
+import { getCliHudPluginDir } from './claude-config-dir.js';
+import type { CliProfileOverride } from './cli-type.js';
 
 export type LineLayoutType = 'compact' | 'expanded';
 
@@ -53,6 +54,21 @@ export interface HudConfig {
   showSeparators: boolean;
   pathLevels: 1 | 2 | 3;
   elementOrder: HudElement[];
+  /**
+   * User-defined CLI profiles. Each key is a CLI type string (e.g. 'my-tool').
+   * Built-in profiles (claude, codebuddy, claude-internal) can also be partially
+   * overridden here. Unknown keys derive sensible defaults from the key name.
+   *
+   * Example:
+   *   "cliProfiles": {
+   *     "my-tool": {
+   *       "configDir": ".my-tool",
+   *       "binaryName": "my-tool",
+   *       "versionPrefix": "MT"
+   *     }
+   *   }
+   */
+  cliProfiles: Record<string, CliProfileOverride>;
   gitStatus: {
     enabled: boolean;
     showDirty: boolean;
@@ -90,6 +106,7 @@ export const DEFAULT_CONFIG: HudConfig = {
   showSeparators: false,
   pathLevels: 1,
   elementOrder: [...DEFAULT_ELEMENT_ORDER],
+  cliProfiles: {},
   gitStatus: {
     enabled: true,
     showDirty: true,
@@ -136,7 +153,7 @@ export const DEFAULT_CONFIG: HudConfig = {
 
 export function getConfigPath(): string {
   const homeDir = os.homedir();
-  return path.join(getHudPluginDir(homeDir), 'config.json');
+  return path.join(getCliHudPluginDir(homeDir), 'config.json');
 }
 
 function validatePathLevels(value: unknown): value is 1 | 2 | 3 {
@@ -363,7 +380,26 @@ export function mergeConfig(userConfig: Partial<HudConfig>): HudConfig {
       : DEFAULT_CONFIG.colors.custom,
   };
 
-  return { lineLayout, showSeparators, pathLevels, elementOrder, gitStatus, display, colors };
+  // Parse cliProfiles: accept an object whose values are plain objects (partial CliProfileOverride).
+  // Invalid entries (non-object keys) are silently dropped.
+  const cliProfiles: Record<string, CliProfileOverride> = {};
+  if (migrated.cliProfiles && typeof migrated.cliProfiles === 'object') {
+    for (const [key, value] of Object.entries(migrated.cliProfiles)) {
+      if (typeof key === 'string' && key.length > 0 && typeof value === 'object' && value !== null) {
+        const override: CliProfileOverride = {};
+        const v = value as Record<string, unknown>;
+        if (typeof v.configDir === 'string') override.configDir = v.configDir;
+        if (typeof v.binaryName === 'string') override.binaryName = v.binaryName;
+        if (typeof v.versionPrefix === 'string') override.versionPrefix = v.versionPrefix;
+        if (typeof v.supportsApiKey === 'boolean') override.supportsApiKey = v.supportsApiKey;
+        if (typeof v.configDirEnvVar === 'string') override.configDirEnvVar = v.configDirEnvVar;
+        if (typeof v.legacyConfigJson === 'boolean') override.legacyConfigJson = v.legacyConfigJson;
+        cliProfiles[key] = override;
+      }
+    }
+  }
+
+  return { lineLayout, showSeparators, pathLevels, elementOrder, cliProfiles, gitStatus, display, colors };
 }
 
 export async function loadConfig(): Promise<HudConfig> {

@@ -28,6 +28,14 @@ export interface StdinData {
             resets_at?: number | null;
         } | null;
     } | null;
+    cost?: {
+        total_cost_usd?: number | null;
+        duration_ms?: number | null;
+        lines_added?: number | null;
+        lines_removed?: number | null;
+    } | null;
+    workspace?: string;
+    hook_event_name?: string;
 }
 export interface ToolEntry {
     id: string;
@@ -85,5 +93,7 @@ export interface RenderContext {
     config: HudConfig;
     extraLabel: string | null;
     claudeCodeVersion?: string;
+    /** Active CLI type — key into built-in or user-configured CLI profiles. */
+    cliType: string;
 }
 //# sourceMappingURL=types.d.ts.map

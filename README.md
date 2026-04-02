@@ -136,8 +136,8 @@ After choosing a preset, you can turn individual elements on or off.
 
 ### Manual Configuration
 
-Edit `~/.claude/plugins/claude-hud/config.json` directly for advanced settings such as `colors.*`,
-`pathLevels`, and threshold overrides. Running `/claude-hud:configure` preserves those manual settings.
+Edit `<configDir>/plugins/claude-hud/config.json` directly for advanced settings such as `colors.*`,
+`pathLevels`, and threshold overrides (e.g. `~/.claude/plugins/claude-hud/config.json` for the default `claude` CLI). Running `/claude-hud:configure` preserves those manual settings.
 
 ### Options
 
@@ -145,6 +145,7 @@ Edit `~/.claude/plugins/claude-hud/config.json` directly for advanced settings s
 |--------|------|---------|-------------|
 | `lineLayout` | string | `expanded` | Layout: `expanded` (multi-line) or `compact` (single line) |
 | `pathLevels` | 1-3 | 1 | Directory levels to show in project path |
+| `cliProfiles` | object | `{}` | Per-CLI profile overrides or new CLI definitions. Keys are CLI type identifiers (e.g. `"mycli"`). Values are partial `CliProfile` objects (any subset of `configDir`, `binaryName`, `versionPrefix`, `supportsApiKey`, `configDirEnvVar`, `legacyConfigJson`). Overrides are merged on top of the built-in profile from `src/cli-profiles.ts`. |
 | `elementOrder` | string[] | `["project","context","usage","memory","environment","tools","agents","todos"]` | Expanded-mode element order. Omit entries to hide them in expanded mode. |
 | `gitStatus.enabled` | boolean | true | Show git branch in HUD |
 | `gitStatus.showDirty` | boolean | true | Show `*` for uncommitted changes |

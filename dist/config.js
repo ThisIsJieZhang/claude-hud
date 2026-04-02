@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
-import { getHudPluginDir } from './claude-config-dir.js';
+import { getCliHudPluginDir } from './claude-config-dir.js';
 export const DEFAULT_ELEMENT_ORDER = [
     'project',
     'context',
@@ -18,6 +18,7 @@ export const DEFAULT_CONFIG = {
     showSeparators: false,
     pathLevels: 1,
     elementOrder: [...DEFAULT_ELEMENT_ORDER],
+    cliProfiles: {},
     gitStatus: {
         enabled: true,
         showDirty: true,
@@ -63,7 +64,7 @@ export const DEFAULT_CONFIG = {
 };
 export function getConfigPath() {
     const homeDir = os.homedir();
-    return path.join(getHudPluginDir(homeDir), 'config.json');
+    return path.join(getCliHudPluginDir(homeDir), 'config.json');
 }
 function validatePathLevels(value) {
     return value === 1 || value === 2 || value === 3;
@@ -269,7 +270,31 @@ export function mergeConfig(userConfig) {
             ? migrated.colors.custom
             : DEFAULT_CONFIG.colors.custom,
     };
-    return { lineLayout, showSeparators, pathLevels, elementOrder, gitStatus, display, colors };
+    // Parse cliProfiles: accept an object whose values are plain objects (partial CliProfileOverride).
+    // Invalid entries (non-object keys) are silently dropped.
+    const cliProfiles = {};
+    if (migrated.cliProfiles && typeof migrated.cliProfiles === 'object') {
+        for (const [key, value] of Object.entries(migrated.cliProfiles)) {
+            if (typeof key === 'string' && key.length > 0 && typeof value === 'object' && value !== null) {
+                const override = {};
+                const v = value;
+                if (typeof v.configDir === 'string')
+                    override.configDir = v.configDir;
+                if (typeof v.binaryName === 'string')
+                    override.binaryName = v.binaryName;
+                if (typeof v.versionPrefix === 'string')
+                    override.versionPrefix = v.versionPrefix;
+                if (typeof v.supportsApiKey === 'boolean')
+                    override.supportsApiKey = v.supportsApiKey;
+                if (typeof v.configDirEnvVar === 'string')
+                    override.configDirEnvVar = v.configDirEnvVar;
+                if (typeof v.legacyConfigJson === 'boolean')
+                    override.legacyConfigJson = v.legacyConfigJson;
+                cliProfiles[key] = override;
+            }
+        }
+    }
+    return { lineLayout, showSeparators, pathLevels, elementOrder, cliProfiles, gitStatus, display, colors };
 }
 export async function loadConfig() {
     const configPath = getConfigPath();

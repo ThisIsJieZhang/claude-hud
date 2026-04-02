@@ -2,7 +2,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { createDebug } from './debug.js';
-import { getClaudeConfigDir, getClaudeConfigJsonPath } from './claude-config-dir.js';
+import { getClaudeConfigJsonPath, getCliConfigDir } from './claude-config-dir.js';
+import { getCliType, getCliProfile } from './cli-type.js';
 const debug = createDebug('config');
 function getMcpServerNames(filePath) {
     if (!fs.existsSync(filePath))
@@ -108,37 +109,43 @@ function pathsReferToSameLocation(pathA, pathB) {
         return false;
     }
 }
-export async function countConfigs(cwd) {
+export async function countConfigs(cwd, userProfiles) {
     let claudeMdCount = 0;
     let rulesCount = 0;
     let hooksCount = 0;
     const homeDir = os.homedir();
-    const claudeDir = getClaudeConfigDir(homeDir);
+    const cliType = getCliType();
+    const profile = getCliProfile(cliType, userProfiles);
+    const claudeDir = getCliConfigDir(homeDir, cliType, userProfiles);
     // Collect all MCP servers across scopes, then subtract disabled ones
     const userMcpServers = new Set();
     const projectMcpServers = new Set();
     // === USER SCOPE ===
-    // ~/.claude/CLAUDE.md
+    // ~/.{cliDir}/CLAUDE.md  (Claude / claude-internal)  or  ~/.{cliDir}/CODEBUDDY.md  etc.
+    // We check both CLAUDE.md and a CLI-specific memory file for portability.
     if (fs.existsSync(path.join(claudeDir, 'CLAUDE.md'))) {
         claudeMdCount++;
     }
-    // ~/.claude/rules/*.md
+    // ~/.{cliDir}/rules/*.md
     rulesCount += countRulesInDir(path.join(claudeDir, 'rules'));
-    // ~/.claude/settings.json (MCPs and hooks)
+    // ~/.{cliDir}/settings.json (MCPs and hooks)
     const userSettings = path.join(claudeDir, 'settings.json');
     for (const name of getMcpServerNames(userSettings)) {
         userMcpServers.add(name);
     }
     hooksCount += countHooksInFile(userSettings);
-    // {CLAUDE_CONFIG_DIR}.json (additional user-scope MCPs)
-    const userClaudeJson = getClaudeConfigJsonPath(homeDir);
-    for (const name of getMcpServerNames(userClaudeJson)) {
-        userMcpServers.add(name);
-    }
-    // Get disabled user-scope MCPs from ~/.claude.json
-    const disabledUserMcps = getDisabledMcpServers(userClaudeJson, 'disabledMcpServers');
-    for (const name of disabledUserMcps) {
-        userMcpServers.delete(name);
+    // For CLIs with a legacy config JSON (e.g. ~/.claude.json for the Claude CLI),
+    // also read that file for additional user-scope MCPs.
+    if (profile.legacyConfigJson) {
+        const userClaudeJson = getClaudeConfigJsonPath(homeDir);
+        for (const name of getMcpServerNames(userClaudeJson)) {
+            userMcpServers.add(name);
+        }
+        // Get disabled user-scope MCPs from ~/.claude.json
+        const disabledUserMcps = getDisabledMcpServers(userClaudeJson, 'disabledMcpServers');
+        for (const name of disabledUserMcps) {
+            userMcpServers.delete(name);
+        }
     }
     // === PROJECT SCOPE ===
     // Avoid double-counting when project .claude directory is the same location as user scope.

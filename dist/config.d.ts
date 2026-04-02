@@ -1,3 +1,4 @@
+import type { CliProfileOverride } from './cli-type.js';
 export type LineLayoutType = 'compact' | 'expanded';
 export type AutocompactBufferMode = 'enabled' | 'disabled';
 export type ContextValueMode = 'percent' | 'tokens' | 'remaining' | 'both';
@@ -24,6 +25,21 @@ export interface HudConfig {
     showSeparators: boolean;
     pathLevels: 1 | 2 | 3;
     elementOrder: HudElement[];
+    /**
+     * User-defined CLI profiles. Each key is a CLI type string (e.g. 'my-tool').
+     * Built-in profiles (claude, codebuddy, claude-internal) can also be partially
+     * overridden here. Unknown keys derive sensible defaults from the key name.
+     *
+     * Example:
+     *   "cliProfiles": {
+     *     "my-tool": {
+     *       "configDir": ".my-tool",
+     *       "binaryName": "my-tool",
+     *       "versionPrefix": "MT"
+     *     }
+     *   }
+     */
+    cliProfiles: Record<string, CliProfileOverride>;
     gitStatus: {
         enabled: boolean;
         showDirty: boolean;

@@ -47,8 +47,8 @@ Claude Code → stdin JSON → parse → render lines → stdout → Claude Code
 - `Task` calls → agent info
 
 **From config files**:
-- MCP count from `~/.claude/settings.json` (mcpServers)
-- Hooks count from `~/.claude/settings.json` (hooks)
+- MCP count from `<configDir>/settings.json` (mcpServers) — path depends on active CLI type (see `src/cli-profiles.ts`)
+- Hooks count from `<configDir>/settings.json` (hooks)
 - Rules count from CLAUDE.md files
 
 **From Claude Code stdin rate limits**:
@@ -66,6 +66,8 @@ src/
 ├── transcript.ts      # Parse transcript JSONL
 ├── config-reader.ts   # Read MCP/rules configs
 ├── config.ts          # Load/validate user config
+├── cli-profiles.ts    # Built-in CLI profile registry (add new CLIs here)
+├── cli-type.ts        # CLI type detection and profile resolution logic
 ├── git.ts             # Git status (branch, dirty, ahead/behind)
 ├── types.ts           # TypeScript interfaces
 └── render/
@@ -108,7 +110,7 @@ Lines 1-2 always shown. Additional lines are opt-in via config:
 
 The plugin manifest is in `.claude-plugin/plugin.json` (metadata only - name, description, version, author).
 
-**StatusLine configuration** must be added to the user's `~/.claude/settings.json` via `/claude-hud:setup`.
+**StatusLine configuration** must be added to the user's `<configDir>/settings.json` (e.g. `~/.claude/settings.json`) via `/claude-hud:setup`. The config directory varies by CLI type — it is defined in `src/cli-profiles.ts` for each built-in CLI.
 
 The setup command adds an auto-updating command that finds the latest installed version at runtime.
 

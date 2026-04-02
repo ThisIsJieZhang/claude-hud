@@ -8,6 +8,7 @@ export interface StdinData {
     id?: string;
     display_name?: string;
   };
+  // Present in Claude Code; absent in CodeBuddy
   context_window?: {
     context_window_size?: number;
     current_usage?: {
@@ -20,6 +21,7 @@ export interface StdinData {
     used_percentage?: number | null;
     remaining_percentage?: number | null;
   };
+  // Present in Claude Code; absent in CodeBuddy
   rate_limits?: {
     five_hour?: {
       used_percentage?: number | null;
@@ -30,6 +32,15 @@ export interface StdinData {
       resets_at?: number | null;
     } | null;
   } | null;
+  // CodeBuddy-specific fields (absent in Claude Code)
+  cost?: {
+    total_cost_usd?: number | null;
+    duration_ms?: number | null;
+    lines_added?: number | null;
+    lines_removed?: number | null;
+  } | null;
+  workspace?: string;
+  hook_event_name?: string;
 }
 
 export interface ToolEntry {
@@ -97,4 +108,6 @@ export interface RenderContext {
   config: HudConfig;
   extraLabel: string | null;
   claudeCodeVersion?: string;
+  /** Active CLI type — key into built-in or user-configured CLI profiles. */
+  cliType: string;
 }

@@ -1,11 +1,51 @@
 ---
 description: Configure HUD display options (layout, presets, display elements) while preserving advanced manual overrides
-allowed-tools: Read, Write, AskUserQuestion
+allowed-tools: Read, Write, Bash, AskUserQuestion
 ---
 
 # Configure Claude HUD
 
-**FIRST**: Use the Read tool to load `~/.claude/plugins/claude-hud/config.json` if it exists.
+**FIRST**: Detect the CLI type and config directory, then load the existing config.
+
+## Step 0: Detect CLI Type and Config Directory
+
+Run this bash snippet to determine `CLI_TYPE` and `CONFIG_DIR`:
+
+```bash
+if [ -n "$CLAUDE_HUD_CLI" ]; then
+  CLI_TYPE="$CLAUDE_HUD_CLI"
+else
+  PARENT_CMD=$(ps -p $PPID -o comm= 2>/dev/null | tr -d '[:space:]')
+  PARENT_CMD=$(basename "$PARENT_CMD" 2>/dev/null || echo "$PARENT_CMD")
+  if [ -n "$PARENT_CMD" ] && [ "$PARENT_CMD" != "bash" ] && [ "$PARENT_CMD" != "sh" ]; then
+    if [ "$PARENT_CMD" = "claude" ]; then
+      CANDIDATE_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+    else
+      CANDIDATE_DIR="$HOME/.$PARENT_CMD"
+    fi
+    if [ -d "$CANDIDATE_DIR" ] || command -v "$PARENT_CMD" >/dev/null 2>&1; then
+      CLI_TYPE="$PARENT_CMD"
+      CONFIG_DIR="$CANDIDATE_DIR"
+    fi
+  fi
+  if [ -z "$CLI_TYPE" ]; then
+    CLI_TYPE="claude"
+  fi
+fi
+if [ -z "$CONFIG_DIR" ]; then
+  if [ "$CLI_TYPE" = "claude" ]; then
+    CONFIG_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+  else
+    CONFIG_DIR="$HOME/.$CLI_TYPE"
+  fi
+fi
+echo "CLI_TYPE=$CLI_TYPE"
+echo "CONFIG_DIR=$CONFIG_DIR"
+```
+
+Store `CLI_TYPE` and `CONFIG_DIR` for use throughout this command.
+
+Use the Read tool to load `$CONFIG_DIR/plugins/claude-hud/config.json` if it exists.
 
 Store current values and note whether config exists (determines which flow to use).
 
@@ -288,7 +328,7 @@ Context ████░░░░░ 45% │ Usage ██░░░░░░░░
 
 ## Write Configuration
 
-Write to `~/.claude/plugins/claude-hud/config.json`.
+Write to `$CONFIG_DIR/plugins/claude-hud/config.json` (using the `CONFIG_DIR` detected in Step 0).
 
 Merge with existing config, preserving:
 - `pathLevels` (not in configure flow)

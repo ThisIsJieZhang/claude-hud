@@ -1,7 +1,7 @@
 import { afterEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { existsSync, utimesSync } from 'node:fs';
+import { existsSync, realpathSync, utimesSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import {
@@ -70,19 +70,23 @@ test('getClaudeCodeVersion persists cache across process resets under CLAUDE_CON
   const binaryPath = path.join(tempHome, 'claude');
   const originalHome = process.env.HOME;
   const originalConfigDir = process.env.CLAUDE_CONFIG_DIR;
+  const originalCliType = process.env.CLAUDE_HUD_CLI;
   let execCalls = 0;
   let resolveCalls = 0;
 
   process.env.HOME = tempHome;
   process.env.CLAUDE_CONFIG_DIR = customConfigDir;
+  process.env.CLAUDE_HUD_CLI = 'claude';
   await writeFile(binaryPath, '#!/bin/sh\n', 'utf8');
   const binaryMtimeMs = 1710000000000;
   utimesSync(binaryPath, binaryMtimeMs / 1000, binaryMtimeMs / 1000);
+  // Resolve through symlinks so the path matches what statResolvedBinary returns
+  const resolvedBinaryPath = realpathSync(binaryPath);
 
   try {
     _setResolveClaudeBinaryForTests(() => {
       resolveCalls += 1;
-      return { path: binaryPath, mtimeMs: binaryMtimeMs };
+      return { path: resolvedBinaryPath, mtimeMs: binaryMtimeMs };
     });
     _setExecFileImplForTests(async () => {
       execCalls += 1;
@@ -94,7 +98,7 @@ test('getClaudeCodeVersion persists cache across process resets under CLAUDE_CON
     assert.equal(execCalls, 1);
     assert.equal(resolveCalls, 1);
 
-    const cachePath = path.join(customConfigDir, 'plugins', 'claude-hud', '.claude-code-version-cache.json');
+    const cachePath = path.join(customConfigDir, 'plugins', 'claude-hud', '.cli-version-cache.json');
     assert.equal(existsSync(cachePath), true);
 
     _resetVersionCache();
@@ -114,6 +118,7 @@ test('getClaudeCodeVersion persists cache across process resets under CLAUDE_CON
   } finally {
     restoreEnvVar('HOME', originalHome);
     restoreEnvVar('CLAUDE_CONFIG_DIR', originalConfigDir);
+    restoreEnvVar('CLAUDE_HUD_CLI', originalCliType);
     await rm(tempHome, { recursive: true, force: true });
   }
 });

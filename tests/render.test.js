@@ -63,6 +63,7 @@ function baseContext() {
         custom: 208,
       },
     },
+    cliType: 'claude',
   };
 }
 

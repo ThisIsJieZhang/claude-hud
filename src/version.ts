@@ -3,7 +3,8 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { promisify } from 'node:util';
-import { getHudPluginDir } from './claude-config-dir.js';
+import { getCliHudPluginDir } from './claude-config-dir.js';
+import { getCliType, getCliBinaryName } from './cli-type.js';
 
 type ExecFileResult = {
   stdout: string;
@@ -34,7 +35,7 @@ type ClaudeVersionInvocation = {
   args: string[];
 };
 
-const CACHE_FILENAME = '.claude-code-version-cache.json';
+const CACHE_FILENAME = '.cli-version-cache.json';
 const defaultExecFile: ExecFileImpl = promisify(execFile) as ExecFileImpl;
 
 let execFileImpl: ExecFileImpl = defaultExecFile;
@@ -46,7 +47,7 @@ let cachedVersion: string | undefined;
 let hasResolved = false;
 
 function getVersionCachePath(homeDir: string): string {
-  return path.join(getHudPluginDir(homeDir), CACHE_FILENAME);
+  return path.join(getCliHudPluginDir(homeDir), CACHE_FILENAME);
 }
 
 function getBinaryCacheKey(binaryInfo: ClaudeBinaryInfo): string {
@@ -160,7 +161,8 @@ function resolveClaudeBinaryFromPath(): ClaudeBinaryInfo | null {
     return null;
   }
 
-  const candidates = getPathCandidates('claude');
+  const binaryName = getCliBinaryName(getCliType());
+  const candidates = getPathCandidates(binaryName);
   for (const entry of pathValue.split(path.delimiter)) {
     if (!entry) {
       continue;

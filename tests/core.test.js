@@ -607,7 +607,11 @@ test('countConfigs honors project and global config locations', async () => {
   const homeDir = await mkdtemp(path.join(tmpdir(), 'claude-hud-home-'));
   const projectDir = await mkdtemp(path.join(tmpdir(), 'claude-hud-project-'));
   const originalHome = process.env.HOME;
+  const originalConfigDir = process.env.CLAUDE_CONFIG_DIR;
+  const originalCliType = process.env.CLAUDE_HUD_CLI;
   process.env.HOME = homeDir;
+  delete process.env.CLAUDE_CONFIG_DIR;
+  process.env.CLAUDE_HUD_CLI = 'claude';
 
   try {
     await mkdir(path.join(homeDir, '.claude', 'rules', 'nested'), { recursive: true });
@@ -642,6 +646,8 @@ test('countConfigs honors project and global config locations', async () => {
     assert.equal(counts.hooksCount, 2);
   } finally {
     process.env.HOME = originalHome;
+    restoreEnvVar('CLAUDE_CONFIG_DIR', originalConfigDir);
+    restoreEnvVar('CLAUDE_HUD_CLI', originalCliType);
     await rm(homeDir, { recursive: true, force: true });
     await rm(projectDir, { recursive: true, force: true });
   }
@@ -652,8 +658,10 @@ test('countConfigs uses CLAUDE_CONFIG_DIR and matching .json sidecar for user sc
   const customConfigDir = path.join(homeDir, '.claude-2');
   const originalHome = process.env.HOME;
   const originalConfigDir = process.env.CLAUDE_CONFIG_DIR;
+  const originalCliType = process.env.CLAUDE_HUD_CLI;
   process.env.HOME = homeDir;
   process.env.CLAUDE_CONFIG_DIR = customConfigDir;
+  process.env.CLAUDE_HUD_CLI = 'claude';
 
   try {
     // Default directory should be ignored when CLAUDE_CONFIG_DIR is set.
@@ -692,6 +700,7 @@ test('countConfigs uses CLAUDE_CONFIG_DIR and matching .json sidecar for user sc
   } finally {
     restoreEnvVar('HOME', originalHome);
     restoreEnvVar('CLAUDE_CONFIG_DIR', originalConfigDir);
+    restoreEnvVar('CLAUDE_HUD_CLI', originalCliType);
     await rm(homeDir, { recursive: true, force: true });
   }
 });
@@ -701,8 +710,10 @@ test('countConfigs still counts project .claude when cwd is home and CLAUDE_CONF
   const customConfigDir = path.join(homeDir, '.claude-2');
   const originalHome = process.env.HOME;
   const originalConfigDir = process.env.CLAUDE_CONFIG_DIR;
+  const originalCliType = process.env.CLAUDE_HUD_CLI;
   process.env.HOME = homeDir;
   process.env.CLAUDE_CONFIG_DIR = customConfigDir;
+  process.env.CLAUDE_HUD_CLI = 'claude';
 
   try {
     // User scope: custom config directory
@@ -733,6 +744,7 @@ test('countConfigs still counts project .claude when cwd is home and CLAUDE_CONF
   } finally {
     restoreEnvVar('HOME', originalHome);
     restoreEnvVar('CLAUDE_CONFIG_DIR', originalConfigDir);
+    restoreEnvVar('CLAUDE_HUD_CLI', originalCliType);
     await rm(homeDir, { recursive: true, force: true });
   }
 });
@@ -740,7 +752,11 @@ test('countConfigs still counts project .claude when cwd is home and CLAUDE_CONF
 test('countConfigs avoids home cwd double-counting across counters and keeps CLAUDE.local.md', async () => {
   const homeDir = await mkdtemp(path.join(tmpdir(), 'claude-hud-home-'));
   const originalHome = process.env.HOME;
+  const originalConfigDir = process.env.CLAUDE_CONFIG_DIR;
+  const originalCliType = process.env.CLAUDE_HUD_CLI;
   process.env.HOME = homeDir;
+  delete process.env.CLAUDE_CONFIG_DIR;
+  process.env.CLAUDE_HUD_CLI = 'claude';
 
   try {
     await mkdir(path.join(homeDir, '.claude', 'rules'), { recursive: true });
@@ -766,6 +782,8 @@ test('countConfigs avoids home cwd double-counting across counters and keeps CLA
     assert.equal(trailingSlashCounts.hooksCount, 1);
   } finally {
     process.env.HOME = originalHome;
+    restoreEnvVar('CLAUDE_HUD_CLI', originalCliType);
+    restoreEnvVar('CLAUDE_CONFIG_DIR', originalConfigDir);
     await rm(homeDir, { recursive: true, force: true });
   }
 });
@@ -773,7 +791,11 @@ test('countConfigs avoids home cwd double-counting across counters and keeps CLA
 test('countConfigs excludes disabled user-scope MCPs', async () => {
   const homeDir = await mkdtemp(path.join(tmpdir(), 'claude-hud-home-'));
   const originalHome = process.env.HOME;
+  const originalConfigDir = process.env.CLAUDE_CONFIG_DIR;
+  const originalCliType = process.env.CLAUDE_HUD_CLI;
   process.env.HOME = homeDir;
+  delete process.env.CLAUDE_CONFIG_DIR;
+  process.env.CLAUDE_HUD_CLI = 'claude';
 
   try {
     await mkdir(path.join(homeDir, '.claude'), { recursive: true });
@@ -794,6 +816,8 @@ test('countConfigs excludes disabled user-scope MCPs', async () => {
     assert.equal(counts.mcpCount, 2); // 3 - 1 disabled = 2
   } finally {
     process.env.HOME = originalHome;
+    restoreEnvVar('CLAUDE_CONFIG_DIR', originalConfigDir);
+    restoreEnvVar('CLAUDE_HUD_CLI', originalCliType);
     await rm(homeDir, { recursive: true, force: true });
   }
 });
@@ -802,7 +826,11 @@ test('countConfigs excludes disabled project .mcp.json servers', async () => {
   const homeDir = await mkdtemp(path.join(tmpdir(), 'claude-hud-home-'));
   const projectDir = await mkdtemp(path.join(tmpdir(), 'claude-hud-project-'));
   const originalHome = process.env.HOME;
+  const originalConfigDir = process.env.CLAUDE_CONFIG_DIR;
+  const originalCliType = process.env.CLAUDE_HUD_CLI;
   process.env.HOME = homeDir;
+  delete process.env.CLAUDE_CONFIG_DIR;
+  process.env.CLAUDE_HUD_CLI = 'claude';
 
   try {
     await mkdir(path.join(homeDir, '.claude'), { recursive: true });
@@ -825,6 +853,8 @@ test('countConfigs excludes disabled project .mcp.json servers', async () => {
     assert.equal(counts.mcpCount, 2); // 4 - 2 disabled = 2
   } finally {
     process.env.HOME = originalHome;
+    restoreEnvVar('CLAUDE_CONFIG_DIR', originalConfigDir);
+    restoreEnvVar('CLAUDE_HUD_CLI', originalCliType);
     await rm(homeDir, { recursive: true, force: true });
     await rm(projectDir, { recursive: true, force: true });
   }
@@ -833,7 +863,11 @@ test('countConfigs excludes disabled project .mcp.json servers', async () => {
 test('countConfigs handles all MCPs disabled', async () => {
   const homeDir = await mkdtemp(path.join(tmpdir(), 'claude-hud-home-'));
   const originalHome = process.env.HOME;
+  const originalConfigDir = process.env.CLAUDE_CONFIG_DIR;
+  const originalCliType = process.env.CLAUDE_HUD_CLI;
   process.env.HOME = homeDir;
+  delete process.env.CLAUDE_CONFIG_DIR;
+  process.env.CLAUDE_HUD_CLI = 'claude';
 
   try {
     await mkdir(path.join(homeDir, '.claude'), { recursive: true });
@@ -854,6 +888,8 @@ test('countConfigs handles all MCPs disabled', async () => {
     assert.equal(counts.mcpCount, 0); // All disabled
   } finally {
     process.env.HOME = originalHome;
+    restoreEnvVar('CLAUDE_CONFIG_DIR', originalConfigDir);
+    restoreEnvVar('CLAUDE_HUD_CLI', originalCliType);
     await rm(homeDir, { recursive: true, force: true });
   }
 });
@@ -861,7 +897,11 @@ test('countConfigs handles all MCPs disabled', async () => {
 test('countConfigs tolerates rule directory read errors', async () => {
   const homeDir = await mkdtemp(path.join(tmpdir(), 'claude-hud-home-'));
   const originalHome = process.env.HOME;
+  const originalConfigDir = process.env.CLAUDE_CONFIG_DIR;
+  const originalCliType = process.env.CLAUDE_HUD_CLI;
   process.env.HOME = homeDir;
+  delete process.env.CLAUDE_CONFIG_DIR;
+  process.env.CLAUDE_HUD_CLI = 'claude';
 
   const rulesDir = path.join(homeDir, '.claude', 'rules');
   await mkdir(rulesDir, { recursive: true });
@@ -873,6 +913,8 @@ test('countConfigs tolerates rule directory read errors', async () => {
   } finally {
     fs.chmodSync(rulesDir, 0o755);
     process.env.HOME = originalHome;
+    restoreEnvVar('CLAUDE_CONFIG_DIR', originalConfigDir);
+    restoreEnvVar('CLAUDE_HUD_CLI', originalCliType);
     await rm(homeDir, { recursive: true, force: true });
   }
 });
@@ -880,7 +922,11 @@ test('countConfigs tolerates rule directory read errors', async () => {
 test('countConfigs ignores non-string values in disabledMcpServers', async () => {
   const homeDir = await mkdtemp(path.join(tmpdir(), 'claude-hud-home-'));
   const originalHome = process.env.HOME;
+  const originalConfigDir = process.env.CLAUDE_CONFIG_DIR;
+  const originalCliType = process.env.CLAUDE_HUD_CLI;
   process.env.HOME = homeDir;
+  delete process.env.CLAUDE_CONFIG_DIR;
+  process.env.CLAUDE_HUD_CLI = 'claude';
 
   try {
     await mkdir(path.join(homeDir, '.claude'), { recursive: true });
@@ -901,6 +947,8 @@ test('countConfigs ignores non-string values in disabledMcpServers', async () =>
     assert.equal(counts.mcpCount, 2); // Only 'server2' disabled, server1 and server3 remain
   } finally {
     process.env.HOME = originalHome;
+    restoreEnvVar('CLAUDE_CONFIG_DIR', originalConfigDir);
+    restoreEnvVar('CLAUDE_HUD_CLI', originalCliType);
     await rm(homeDir, { recursive: true, force: true });
   }
 });
@@ -909,7 +957,11 @@ test('countConfigs counts same-named servers in different scopes separately', as
   const homeDir = await mkdtemp(path.join(tmpdir(), 'claude-hud-home-'));
   const projectDir = await mkdtemp(path.join(tmpdir(), 'claude-hud-project-'));
   const originalHome = process.env.HOME;
+  const originalConfigDir = process.env.CLAUDE_CONFIG_DIR;
+  const originalCliType = process.env.CLAUDE_HUD_CLI;
   process.env.HOME = homeDir;
+  delete process.env.CLAUDE_CONFIG_DIR;
+  process.env.CLAUDE_HUD_CLI = 'claude';
 
   try {
     await mkdir(path.join(homeDir, '.claude'), { recursive: true });
@@ -934,6 +986,8 @@ test('countConfigs counts same-named servers in different scopes separately', as
     assert.equal(counts.mcpCount, 4);
   } finally {
     process.env.HOME = originalHome;
+    restoreEnvVar('CLAUDE_CONFIG_DIR', originalConfigDir);
+    restoreEnvVar('CLAUDE_HUD_CLI', originalCliType);
     await rm(homeDir, { recursive: true, force: true });
     await rm(projectDir, { recursive: true, force: true });
   }
@@ -942,7 +996,11 @@ test('countConfigs counts same-named servers in different scopes separately', as
 test('countConfigs uses case-sensitive matching for disabled servers', async () => {
   const homeDir = await mkdtemp(path.join(tmpdir(), 'claude-hud-home-'));
   const originalHome = process.env.HOME;
+  const originalConfigDir = process.env.CLAUDE_CONFIG_DIR;
+  const originalCliType = process.env.CLAUDE_HUD_CLI;
   process.env.HOME = homeDir;
+  delete process.env.CLAUDE_CONFIG_DIR;
+  process.env.CLAUDE_HUD_CLI = 'claude';
 
   try {
     await mkdir(path.join(homeDir, '.claude'), { recursive: true });
@@ -964,6 +1022,8 @@ test('countConfigs uses case-sensitive matching for disabled servers', async () 
     assert.equal(counts.mcpCount, 2);
   } finally {
     process.env.HOME = originalHome;
+    restoreEnvVar('CLAUDE_CONFIG_DIR', originalConfigDir);
+    restoreEnvVar('CLAUDE_HUD_CLI', originalCliType);
     await rm(homeDir, { recursive: true, force: true });
   }
 });
@@ -974,7 +1034,11 @@ test('countConfigs uses case-sensitive matching for disabled servers', async () 
 test('Issue #3: MCP count updates correctly when servers are disabled', async () => {
   const homeDir = await mkdtemp(path.join(tmpdir(), 'claude-hud-home-'));
   const originalHome = process.env.HOME;
+  const originalConfigDir = process.env.CLAUDE_CONFIG_DIR;
+  const originalCliType = process.env.CLAUDE_HUD_CLI;
   process.env.HOME = homeDir;
+  delete process.env.CLAUDE_CONFIG_DIR;
+  process.env.CLAUDE_HUD_CLI = 'claude';
 
   try {
     await mkdir(path.join(homeDir, '.claude'), { recursive: true });
@@ -1038,6 +1102,8 @@ test('Issue #3: MCP count updates correctly when servers are disabled', async ()
     assert.equal(counts.mcpCount, 0, 'Should show 0 MCPs when all are disabled');
   } finally {
     process.env.HOME = originalHome;
+    restoreEnvVar('CLAUDE_CONFIG_DIR', originalConfigDir);
+    restoreEnvVar('CLAUDE_HUD_CLI', originalCliType);
     await rm(homeDir, { recursive: true, force: true });
   }
 });

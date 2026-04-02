@@ -3,11 +3,11 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import * as readline from 'readline';
 import { createHash } from 'node:crypto';
-import { getHudPluginDir } from './claude-config-dir.js';
+import { getCliHudPluginDir } from './claude-config-dir.js';
 let createReadStreamImpl = fs.createReadStream;
 function getTranscriptCachePath(transcriptPath, homeDir) {
     const hash = createHash('sha256').update(path.resolve(transcriptPath)).digest('hex');
-    return path.join(getHudPluginDir(homeDir), 'transcript-cache', `${hash}.json`);
+    return path.join(getCliHudPluginDir(homeDir), 'transcript-cache', `${hash}.json`);
 }
 function readTranscriptFileState(transcriptPath) {
     try {

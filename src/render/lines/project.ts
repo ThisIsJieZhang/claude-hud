@@ -2,6 +2,7 @@ import type { RenderContext } from '../../types.js';
 import { getModelName, getProviderLabel } from '../../stdin.js';
 import { getOutputSpeed } from '../../speed-tracker.js';
 import { git as gitColor, gitBranch as gitBranchColor, label, model as modelColor, project as projectColor, red, custom as customColor } from '../colors.js';
+import { getCliVersionPrefix, getCliProfile } from '../../cli-type.js';
 
 export function renderProjectLine(ctx: RenderContext): string | null {
   const display = ctx.config?.display;
@@ -12,7 +13,9 @@ export function renderProjectLine(ctx: RenderContext): string | null {
     const model = getModelName(ctx.stdin);
     const providerLabel = getProviderLabel(ctx.stdin);
     const showUsage = display?.showUsage !== false;
-    const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
+    // Show 'API' badge only when the active CLI profile supports API key usage
+    const profile = getCliProfile(ctx.cliType, ctx.config?.cliProfiles);
+    const hasApiKey = profile.supportsApiKey && !!process.env.ANTHROPIC_API_KEY;
     const modelQualifier = providerLabel ?? (showUsage && hasApiKey ? red('API') : undefined);
     const modelDisplay = modelQualifier ? `${model} | ${modelQualifier}` : model;
     parts.push(modelColor(`[${modelDisplay}]`, colors));
@@ -74,7 +77,8 @@ export function renderProjectLine(ctx: RenderContext): string | null {
   }
 
   if (display?.showClaudeCodeVersion && ctx.claudeCodeVersion) {
-    parts.push(label(`CC v${ctx.claudeCodeVersion}`, colors));
+    const prefix = getCliVersionPrefix(ctx.cliType);
+    parts.push(label(`${prefix} v${ctx.claudeCodeVersion}`, colors));
   }
 
   if (ctx.extraLabel) {
